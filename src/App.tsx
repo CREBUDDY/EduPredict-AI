@@ -211,7 +211,7 @@ export default function App() {
             <div>
               <span className="text-[9px] text-slate-400 block uppercase font-bold tracking-wider leading-none">Registry</span>
               <button onClick={() => navigate('settings')} className="text-white hover:underline block text-[10px] truncate w-24 text-left font-medium mt-0.5">
-                savishhu@gmail.com
+                demo@edupredict.org
               </button>
             </div>
           </div>

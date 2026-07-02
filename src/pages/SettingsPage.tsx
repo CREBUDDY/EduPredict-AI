@@ -36,11 +36,11 @@ export default function SettingsPage({ onNavigate }: SettingsPageProps) {
             <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">Active Administrator Profile</h3>
             <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100/50">
               <div className="w-12 h-12 rounded-full bg-blue-100 text-[#2563EB] flex items-center justify-center font-bold text-lg">
-                S
+                D
               </div>
               <div className="space-y-0.5">
                 <span className="px-1.5 py-0.5 rounded bg-blue-100 text-[#2563EB] text-[9px] font-bold uppercase">Guest Login Mode</span>
-                <h4 className="text-xs font-bold text-slate-800">savishhu@gmail.com</h4>
+                <h4 className="text-xs font-bold text-slate-800">demo@edupredict.org</h4>
                 <p className="text-[10px] text-slate-400">Authorized Session Admin • University Registry</p>
               </div>
             </div>
