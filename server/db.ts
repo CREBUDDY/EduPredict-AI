@@ -7,8 +7,13 @@ import fs from 'fs';
 import path from 'path';
 import { Student, ModelMetrics, FeatureImportance } from '../src/types';
 
-// Define DB file path in the workspace root or temp
-const DB_FILE = path.join(process.cwd(), 'server-data.json');
+// Define DB file paths:
+// 1. BUNDLED_DB_FILE is relative to __dirname so Vercel statically analyzes and packages server-data.json into the function bundle
+// 2. WRITE_DB_FILE is in /tmp on Vercel to allow saving updates on a stateless/read-only filesystem
+const BUNDLED_DB_FILE = path.join(__dirname, '../server-data.json');
+const WRITE_DB_FILE = process.env.VERCEL
+  ? path.join('/tmp', 'server-data.json')
+  : BUNDLED_DB_FILE;
 
 interface DatabaseSchema {
   students: Student[];
@@ -41,9 +46,13 @@ export class Database {
 
   private init() {
     try {
-      if (fs.existsSync(DB_FILE)) {
-        const fileContent = fs.readFileSync(DB_FILE, 'utf-8');
+      if (fs.existsSync(WRITE_DB_FILE)) {
+        const fileContent = fs.readFileSync(WRITE_DB_FILE, 'utf-8');
         this.data = JSON.parse(fileContent);
+      } else if (fs.existsSync(BUNDLED_DB_FILE)) {
+        const fileContent = fs.readFileSync(BUNDLED_DB_FILE, 'utf-8');
+        this.data = JSON.parse(fileContent);
+        this.save();
       } else {
         this.generateSeedData();
         this.save();
@@ -56,7 +65,7 @@ export class Database {
 
   private save() {
     try {
-      fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
+      fs.writeFileSync(WRITE_DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
     } catch (error) {
       console.error('Error saving database file:', error);
     }
