@@ -5,6 +5,7 @@
 
 import express from 'express';
 import path from 'path';
+import { createServer as createViteServer } from 'vite';
 import { db } from './server/db';
 import { GoogleGenAI } from '@google/genai';
 import { Student, PredictionInput, PredictionResult, ModelMetrics, FeatureImportance } from './src/types';
@@ -31,12 +32,13 @@ function getGemini(): GoogleGenAI | null {
   return aiClient;
 }
 
-const app = express();
-const PORT = 3000;
+async function startServer() {
+  const app = express();
+  const PORT = 3000;
 
-// Middlewares
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+  // Middlewares
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   // --- API Routes ---
 
@@ -505,34 +507,23 @@ Keep the language professional, encouraging, objective, and styled like a top-ti
 
 
   // Serve static assets in production or connect Vite dev server
-  async function setupViteOrStatic() {
-    if (!process.env.VERCEL) {
-      if (process.env.NODE_ENV !== 'production') {
-        const { createServer: createViteServer } = await import('vite');
-        const vite = await createViteServer({
-          server: { middlewareMode: true },
-          appType: 'spa',
-        });
-        app.use(vite.middlewares);
-      } else {
-        const distPath = path.join(process.cwd(), 'dist');
-        app.use(express.static(distPath));
-        app.get('*', (req, res) => {
-          res.sendFile(path.join(distPath, 'index.html'));
-        });
-      }
-    }
-  }
-
-  // Start the server if running locally (not on Vercel)
-  if (!process.env.VERCEL) {
-    setupViteOrStatic().then(() => {
-      app.listen(PORT, '0.0.0.0', () => {
-        console.log(`EduPredict AI server booted successfully on port ${PORT}`);
-      });
-    }).catch(err => {
-      console.error('Failed to start server:', err);
+  if (process.env.NODE_ENV !== 'production') {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
-  export default app;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`EduPredict AI server booted successfully on port ${PORT}`);
+  });
+}
+
+startServer();

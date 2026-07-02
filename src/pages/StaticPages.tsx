@@ -28,7 +28,7 @@ interface StaticPagesProps {
 export default function StaticPages({ onNavigate, pageType }: StaticPagesProps) {
   // Contact state
   const [formSubmitted, setFormSubmitted] = useState(false);
-  const [ticketInput, setTicketInput] = useState({ name: '', email: 'demo@edupredict.org', message: '' });
+  const [ticketInput, setTicketInput] = useState({ name: '', email: 'savishhu@gmail.com', message: '' });
 
   if (pageType === 'about') {
     return (
