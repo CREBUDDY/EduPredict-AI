@@ -46,17 +46,44 @@ export class Database {
 
   private init() {
     try {
-      if (fs.existsSync(WRITE_DB_FILE)) {
+      // 1. On Vercel, check if there is an in-memory/temp copy first
+      if (process.env.VERCEL && fs.existsSync(WRITE_DB_FILE)) {
         const fileContent = fs.readFileSync(WRITE_DB_FILE, 'utf-8');
         this.data = JSON.parse(fileContent);
-      } else if (fs.existsSync(BUNDLED_DB_FILE)) {
-        const fileContent = fs.readFileSync(BUNDLED_DB_FILE, 'utf-8');
-        this.data = JSON.parse(fileContent);
-        this.save();
-      } else {
-        this.generateSeedData();
-        this.save();
+        return;
       }
+
+      // 2. Otherwise, search for the bundled or static server-data.json in all possible directories
+      const possibleLocations = [
+        path.join(process.cwd(), 'server-data.json'),
+        BUNDLED_DB_FILE,
+        path.join(__dirname, 'server-data.json'),
+        path.join(__dirname, '../../server-data.json'),
+        path.join(process.cwd(), 'dist', 'server-data.json')
+      ];
+
+      for (const loc of possibleLocations) {
+        if (fs.existsSync(loc)) {
+          console.log(`EduPredict DB: Found database file at: ${loc}`);
+          const fileContent = fs.readFileSync(loc, 'utf-8');
+          this.data = JSON.parse(fileContent);
+          
+          // Save a cached copy to /tmp if on Vercel for subsequent reads in the same session
+          if (process.env.VERCEL) {
+            try {
+              fs.writeFileSync(WRITE_DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
+            } catch (e) {
+              // ignore safe write failures on Vercel serverless
+            }
+          }
+          return;
+        }
+      }
+
+      // 3. Fallback to high-fidelity seed generation if no file is found
+      console.log('EduPredict DB: No database file found. Initializing seed data...');
+      this.generateSeedData();
+      this.save();
     } catch (error) {
       console.error('Error initializing database, using in-memory fallback:', error);
       this.generateSeedData();
@@ -64,6 +91,17 @@ export class Database {
   }
 
   private save() {
+    // If on Vercel, avoid storing updates persistently back to the file system to optimize performance
+    // as requested (use temp/in-memory DB to just show predictions/values not to store)
+    if (process.env.VERCEL) {
+      try {
+        fs.writeFileSync(WRITE_DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
+      } catch (error) {
+        // Silent catch for Vercel sandbox filesystem limits
+      }
+      return;
+    }
+
     try {
       fs.writeFileSync(WRITE_DB_FILE, JSON.stringify(this.data, null, 2), 'utf-8');
     } catch (error) {
